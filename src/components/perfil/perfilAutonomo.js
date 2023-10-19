@@ -12,8 +12,33 @@ import {BASE_URL} from "../../Config";
 
 export default function PerfilAutonomo({route, navigation}) {
     const [profileData, setProfileData] = useState(null);
+    const [countNotifications, setCountNotifications] = useState(null);
     const {customerId} = route.params;
     const {csrfToken} = route.params;
+
+
+    useEffect(() => {
+        if (profileData) {
+            fetch(`${BASE_URL}/get-notificacao?idAutonomo=${profileData.id}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    setCountNotifications(data);
+                })
+                .catch((error) => {
+                    console.error('Error fetching notification count:', error);
+                });
+        }
+    }, [profileData]);
 
     useEffect(() => {
         fetch(`${BASE_URL}/get-autonomo-perfil?customerId=${customerId}`, {
@@ -41,7 +66,7 @@ export default function PerfilAutonomo({route, navigation}) {
         navigation.navigate('Agenda');
     };
     const handleEdit = async () => {
-        navigation.navigate('Completar Cadastro', { customerId, profileData, csrfToken});
+        navigation.navigate('Completar Cadastro', {customerId, profileData, csrfToken});
     };
 
     return (
@@ -49,8 +74,8 @@ export default function PerfilAutonomo({route, navigation}) {
             {profileData ? (
                 <View>
                     <View style={styles.topo}>
-                        <Image style={{flex: 1, width: '100%', marginTop: 10, height: 350, borderRadius: 20}}
-                               source={require('../img/homem.jpg')}/>
+                        <Image style={{ flex: 1, width: '100%', marginTop: 10, height: 350, borderRadius: 20 }}
+                               source={require('../img/homem.jpg')} />
                     </View>
                     <View style={styles.all}>
                         <Text style={styles.title}>{profileData.nome_completo}, {profileData.idade}</Text>
@@ -58,8 +83,8 @@ export default function PerfilAutonomo({route, navigation}) {
                             <View style={styles.alignStar}>
                                 {profileData.media_avaliacao > 0 ? (
                                     Array.from({ length: profileData.media_avaliacao }).map((_, index) => (
-                                        <Image style={{margin: 2, width: 15, height: 18}}
-                                               source={require('../img/icons/star.png')}/>
+                                        <Image style={{ margin: 2, width: 15, height: 18 }}
+                                               source={require('../img/icons/star.png')} />
                                     ))
                                 ) : (
                                     <Text style={styles.noAvaliation}>Não possui avaliações</Text>
@@ -72,20 +97,20 @@ export default function PerfilAutonomo({route, navigation}) {
                             )}
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.alignInfo}>
-                            <Image style={{width: 15, height: 18}} source={require('../img/icons/building.png')}/>
-                            <Text style={[styles.profissao, {textTransform: 'capitalize'}]}>
+                            <Image style={{ width: 15, height: 18 }} source={require('../img/icons/building.png')} />
+                            <Text style={[styles.profissao, { textTransform: 'capitalize' }]}>
                                 Profissão: {profileData.profissao}
                             </Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.alignInfo}>
-                            <Image style={{width: 15, height: 18}} source={require('../img/icons/gender.png')}/>
-                            <Text style={[styles.profissao, {textTransform: 'capitalize'}]}>
+                            <Image style={{ width: 15, height: 18 }} source={require('../img/icons/gender.png')} />
+                            <Text style={[styles.profissao, { textTransform: 'capitalize' }]}>
                                 Gênero: {profileData.genero}
                             </Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.alignInfo}>
-                            <Image style={{width: 15, height: 18}} source={require('../img/icons/gps.png')}/>
-                            <Text style={[styles.profissao, {textTransform: 'capitalize'}]}>
+                            <Image style={{ width: 15, height: 18 }} source={require('../img/icons/gps.png')} />
+                            <Text style={[styles.profissao, { textTransform: 'capitalize' }]}>
                                 Cidade: {profileData.cidade} - {profileData.estado}
                             </Text>
                         </TouchableOpacity>
@@ -100,21 +125,21 @@ export default function PerfilAutonomo({route, navigation}) {
                     </View>
                     <View style={styles.buttons}>
                         <TouchableOpacity style={styles.btnEdit} onPress={handleEdit}>
-                            <Image source={require('../img/icons/pencil-fill-circle.png')}/>
+                            <Image source={require('../img/icons/pencil-fill-circle.png')} />
                             <Text style={styles.btnText}>Editar Perfil</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.btnEdit} onPress={handleSubmit}>
-                            <Image source={require('../img/icons/file-earmark-text-fill.png')}/>
-                            <Text style={styles.btnText}>Verificar Agenda</Text>
+                            <Image source={require('../img/icons/file-earmark-text-fill.png')} />
+
+                            <Text style={styles.btnText}>Ver Serviços ({countNotifications})</Text>
+
                         </TouchableOpacity>
                     </View>
                 </View>
-            ) : ''}
+            ) : null}
         </ScrollView>
-    )
-        ;
+    );
 }
-
 const styles = StyleSheet.create({
     container: {
         backgroundColor: '#ffff',

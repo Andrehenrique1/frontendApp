@@ -14,11 +14,12 @@ export default function VerAutonomo({navigation}) {
 
     const route = useRoute();
     const {userId} = route.params;
+    const {csrfToken} = route.params;
 
     const professionalData = route.params.professionalData;
 
     const handleSubmit = async () => {
-        navigation.navigate('Agenda', {professionalData, userId});
+        navigation.navigate('Agenda', {professionalData, userId, csrfToken});
     };
 
     return (
