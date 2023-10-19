@@ -97,7 +97,7 @@ export default function Listagem({route, navigation}) {
     }, []);
 
     const handleProfileClick = (item) => {
-        navigation.navigate('Perfil do Autonomo', { professionalData: item, userId });
+        navigation.navigate('Perfil do Autonomo', { professionalData: item, userId, csrfToken });
     };
 
     return (

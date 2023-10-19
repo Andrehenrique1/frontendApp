@@ -8,6 +8,7 @@ import {
     TextInput,
     TouchableOpacity,
     ScrollView,
+    ToastAndroid,
     Modal,
 } from 'react-native';
 import {BASE_URL} from "../../Config";
@@ -22,6 +23,7 @@ export default function Agenda({route, navigation}) {
     const [selectedDate, setSelectedDate] = useState(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const {userId} = route.params;
+    const {csrfToken} = route.params;
     const {professionalData} = route.params;
 
     const [selectedTime, setSelectedTime] = useState(null);
@@ -51,30 +53,6 @@ export default function Agenda({route, navigation}) {
         setSelectedTime(time);
     };
 
-    const handleConfirmation = () => {
-        if (!selectedTime) {
-            // Display an error message to the user, indicating that they must select a time.
-            return;
-        }
-
-        const requestDetails = {
-            date: selectedDate,
-            time: selectedTime,
-            description: serviceDescription,
-            // Other necessary fields
-        };
-
-        // Simulate a request to a server (you should replace this with your actual server request)
-        setTimeout(() => {
-            // Request successful, you can close the modal
-            setIsModalVisible(false);
-            // You can also reset the selected time and description here
-            setSelectedTime(null);
-            setServiceDescription('');
-        }, 1000);
-    };
-
-
     const toggleModal = (date) => {
         setSelectedDate(date);
         setIsModalVisible(!isModalVisible);
@@ -97,7 +75,7 @@ export default function Agenda({route, navigation}) {
         for (let week = 0; week < 6; week++) {
             const days = [];
 
-            let isEmptyWeek = true; // Flag to track if the week is empty
+            let isEmptyWeek = true;
 
             for (let day = 0; day < 7; day++) {
                 if (week === 0 && day < firstDayOfMonth) {
@@ -116,11 +94,10 @@ export default function Agenda({route, navigation}) {
                         </TouchableOpacity>
                     );
                     dayCounter++;
-                    isEmptyWeek = false; // Mark the week as not empty
+                    isEmptyWeek = false;
                 }
             }
 
-            // Add the week to the calendar array only if it's not empty
             if (!isEmptyWeek) {
                 calendar.push(
                     <View key={week} style={styles.calendarRow}>
@@ -151,34 +128,59 @@ export default function Agenda({route, navigation}) {
         return monthNames[monthIndex];
     }
 
+    const headers = {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrfToken,
+    };
+
+
     const createAgendamento = async () => {
         try {
-            const userData = {
-                id_cliente: userId,
-                id_autonomo: professionalData.id,
-                data: selectedDate,
-                horario: selectedTime,
-                descricao: serviceDescription,
-                status: 'pendente',
-                servico_finalizado: false,
-            };
+            const dateParts = selectedDate.split('/');
+            if (dateParts.length === 3) {
+                const isoDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                const formattedDate = new Date(isoDate);
 
-            const response = await axios.post(`${BASE_URL}/agendamentos`, userData);
+                if (!isNaN(formattedDate.getTime())) {
+                    const userData = {
+                        id_cliente: userId,
+                        id_autonomo: professionalData.id,
+                        data: isoDate,
+                        horario: selectedTime,
+                        descricao: serviceDescription,
+                        status: 'pendente',
+                        servico_finalizado: false,
+                    };
 
-            if (response.status >= 200 && response.status < 300) {
-                console.log('Request successful');
-                // Handle success, e.g., navigate to a success screen
+                    const response = await axios.post(`${BASE_URL}/agendamentos`, userData, { headers });
+
+                    if (response.status >= 200 && response.status < 300) {
+                        closeModal()
+                        ToastAndroid.show(
+                            "Solicitação enviada com sucesso",
+                            ToastAndroid.SHORT,
+                            ToastAndroid.BOTTOM
+                        )
+                    } else {
+                        console.error('Request failed with status code:', response.status);
+                        console.error('Response data:', response.data);
+                    }
+                } else {
+                    console.error('Invalid date');
+                }
             } else {
-                console.error('Request failed with status code:', response.status);
-                console.error('Response data:', response.data);
-                // Handle the error case, e.g., display an error message to the user
+                console.error('Invalid date format');
             }
         } catch (error) {
             console.error('Error submitting data:', error);
-            // Handle the error case, e.g., display an error message to the user
         }
     };
 
+    const closeModal = () => {
+        setSelectedTime(null);
+        setServiceDescription('');
+        setIsModalVisible(false);
+    };
 
     return (
         <>
@@ -227,14 +229,15 @@ export default function Agenda({route, navigation}) {
                         <Text style={styles.agendaSubTitleHours}>Data disponível</Text>
                         <Text style={styles.dataDia}>{selectedDate}</Text>
                         <Text style={styles.agendaSubTitleHours}>Horários</Text>
-                        <ScrollView style={styles.horarios}
-                              horizontal={true}
-                              contentContainerStyle={styles.horariosContent}
+                        <ScrollView
+                            style={styles.horarios}
+                            horizontal={true}
+                            contentContainerStyle={styles.horariosContent}
                         >
                             {availableTimes.map((time) => (
                                 <TouchableOpacity
                                     key={time}
-                                    style={[styles.horario, {backgroundColor: '#ccc'}]}
+                                    style={[styles.horario, { backgroundColor: selectedTime === time ? '#00ff009a' : '#ccc' }]}
                                     onPress={() => handleTimeSelection(time)}
                                 >
                                     <Text>{time}</Text>
@@ -254,7 +257,7 @@ export default function Agenda({route, navigation}) {
                         <View style={styles.buttonContainer}>
                             <TouchableOpacity
                                 style={styles.buttonRed}
-                                onPress={() => setIsModalVisible(false)}
+                                onPress={closeModal}
                             >
                                 <Text>Cancelar</Text>
                             </TouchableOpacity>

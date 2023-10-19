@@ -70,7 +70,7 @@ export default function EntrarCliente({navigation}) {
                 const userId = data.customer_id; // Obtenha o ID da conta do cliente
                 if (userId) {
                     // Login bem-sucedido
-                    navigation.navigate('Listagem', {userId});
+                    navigation.navigate('Listagem', {userId, csrfToken});
                 } else {
                     // Algo deu errado ao obter o ID da conta do cliente
                     setError('Erro ao obter o ID da conta do cliente.');
