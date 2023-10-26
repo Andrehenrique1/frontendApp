@@ -9,6 +9,7 @@ import {
     TouchableOpacity, ScrollView
 } from 'react-native';
 import {BASE_URL} from "../../Config";
+import MenuAutonomo from "../componentes/menuAutonomo";
 
 export default function PerfilAutonomo({route, navigation}) {
     const [profileData, setProfileData] = useState(null);
@@ -16,10 +17,9 @@ export default function PerfilAutonomo({route, navigation}) {
     const {customerId} = route.params;
     const {csrfToken} = route.params;
 
-
     useEffect(() => {
         if (profileData) {
-            fetch(`${BASE_URL}/get-notificacao?idAutonomo=${profileData.id}`, {
+            fetch(`${BASE_URL}/get-notificacao?idAutonomo=${customerId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -61,83 +61,82 @@ export default function PerfilAutonomo({route, navigation}) {
             });
     }, [customerId, route.params]);
 
-
-    const handleSubmit = async () => {
-        navigation.navigate('Agenda');
-    };
     const handleEdit = async () => {
         navigation.navigate('Completar Cadastro', {customerId, profileData, csrfToken});
     };
 
     return (
-        <ScrollView style={styles.container}>
-            {profileData ? (
-                <View>
-                    <View style={styles.topo}>
-                        <Image style={{ flex: 1, width: '100%', marginTop: 10, height: 350, borderRadius: 20 }}
-                               source={require('../img/homem.jpg')} />
-                    </View>
-                    <View style={styles.all}>
-                        <Text style={styles.title}>{profileData.nome_completo}, {profileData.idade}</Text>
-                        <TouchableOpacity style={styles.starGroup}>
-                            <View style={styles.alignStar}>
-                                {profileData.media_avaliacao > 0 ? (
-                                    Array.from({ length: profileData.media_avaliacao }).map((_, index) => (
-                                        <Image style={{ margin: 2, width: 15, height: 18 }}
-                                               source={require('../img/icons/star.png')} />
-                                    ))
-                                ) : (
-                                    <Text style={styles.noAvaliation}>Não possui avaliações</Text>
+        <>
+            <ScrollView style={styles.container}>
+                {profileData ? (
+                    <View>
+                        <View style={styles.topo}>
+                            <Image style={{flex: 1, width: '100%', marginTop: 10, height: 350, borderRadius: 20}}
+                                   source={require('../img/homem.jpg')}/>
+                        </View>
+                        <View style={styles.all}>
+                            <Text style={styles.title}>{profileData.nome_completo}, {profileData.idade}</Text>
+                            <TouchableOpacity style={styles.starGroup}>
+                                <View style={styles.alignStar}>
+                                    {profileData.media_avaliacao > 0 ? (
+                                        Array.from({length: profileData.media_avaliacao}).map((_, index) => (
+                                            <Image style={{margin: 2, width: 15, height: 18}}
+                                                   source={require('../img/icons/star.png')}/>
+                                        ))
+                                    ) : (
+                                        <Text style={styles.noAvaliation}>Não possui avaliações</Text>
+                                    )}
+                                </View>
+                                {profileData.media_avaliacao > 0 && (
+                                    <Text style={styles.starText}>
+                                        (Média: {(Math.round(profileData.media_avaliacao * 10) / 10).toFixed(1)})
+                                    </Text>
                                 )}
-                            </View>
-                            {profileData.media_avaliacao > 0 && (
-                                <Text style={styles.starText}>
-                                    (Média: {(Math.round(profileData.media_avaliacao * 10) / 10).toFixed(1)})
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.alignInfo}>
+                                <Image style={{width: 15, height: 18}} source={require('../img/icons/building.png')}/>
+                                <Text style={[styles.profissao, {textTransform: 'capitalize'}]}>
+                                    Profissão: {profileData.profissao}
                                 </Text>
-                            )}
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.alignInfo}>
-                            <Image style={{ width: 15, height: 18 }} source={require('../img/icons/building.png')} />
-                            <Text style={[styles.profissao, { textTransform: 'capitalize' }]}>
-                                Profissão: {profileData.profissao}
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.alignInfo}>
+                                <Image style={{width: 15, height: 18}} source={require('../img/icons/gender.png')}/>
+                                <Text style={[styles.profissao, {textTransform: 'capitalize'}]}>
+                                    Gênero: {profileData.genero}
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.alignInfo}>
+                                <Image style={{width: 15, height: 18}} source={require('../img/icons/gps.png')}/>
+                                <Text style={[styles.profissao, {textTransform: 'capitalize'}]}>
+                                    Cidade: {profileData.cidade} - {profileData.estado}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.info}>
+                            <Text style={styles.descricaoTitleText}>
+                                Sobre mim
                             </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.alignInfo}>
-                            <Image style={{ width: 15, height: 18 }} source={require('../img/icons/gender.png')} />
-                            <Text style={[styles.profissao, { textTransform: 'capitalize' }]}>
-                                Gênero: {profileData.genero}
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.alignInfo}>
-                            <Image style={{ width: 15, height: 18 }} source={require('../img/icons/gps.png')} />
-                            <Text style={[styles.profissao, { textTransform: 'capitalize' }]}>
-                                Cidade: {profileData.cidade} - {profileData.estado}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                    <View style={styles.info}>
-                        <Text style={styles.descricaoTitleText}>
-                            Sobre mim
-                        </Text>
-                        <View style={styles.descricaoBox}>
-                            <Text style={styles.descricao}>{profileData.descricao}</Text>
+                            <View style={styles.descricaoBox}>
+                                <Text style={styles.descricao}>{profileData.descricao}</Text>
+                            </View>
+                        </View>
+                        <View style={styles.buttons}>
+                            <TouchableOpacity style={styles.btnEdit} onPress={handleEdit}>
+                                <Image source={require('../img/icons/pencil-fill-circle.png')}/>
+                                <Text style={styles.btnText}>Editar Perfil</Text>
+                            </TouchableOpacity>
+                            {/*<TouchableOpacity style={styles.btnEdit} onPress={handleSubmit}>*/}
+                            {/*    <Image source={require('../img/icons/file-earmark-text-fill.png')}/>*/}
+
+                            {/*    <Text style={styles.btnText}>Ver Serviços ({countNotifications})</Text>*/}
+
+                            {/*</TouchableOpacity>*/}
                         </View>
                     </View>
-                    <View style={styles.buttons}>
-                        <TouchableOpacity style={styles.btnEdit} onPress={handleEdit}>
-                            <Image source={require('../img/icons/pencil-fill-circle.png')} />
-                            <Text style={styles.btnText}>Editar Perfil</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.btnEdit} onPress={handleSubmit}>
-                            <Image source={require('../img/icons/file-earmark-text-fill.png')} />
-
-                            <Text style={styles.btnText}>Ver Serviços ({countNotifications})</Text>
-
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            ) : null}
-        </ScrollView>
+                ) : null}
+            </ScrollView>
+            <MenuAutonomo csrfToken={csrfToken} customerId={customerId} navigation={navigation} countNotifications={countNotifications}></MenuAutonomo>
+        </>
     );
 }
 const styles = StyleSheet.create({

@@ -8,7 +8,8 @@ import {
     TextInput,
     TouchableOpacity, ScrollView
 } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import {useRoute} from '@react-navigation/native';
+import MenuCliente from "../componentes/menuCliente";
 
 export default function VerAutonomo({navigation}) {
 
@@ -23,74 +24,82 @@ export default function VerAutonomo({navigation}) {
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.topo}>
-                <Image style={{flex: 1, width: '100%', marginTop: 10, height: 350, borderRadius: 20}}
-                       source={require('../img/homem.jpg')}/>
-                {/*<Image style={{flex: 1, width: '100%', marginTop: 10, height: 350, borderRadius: 20}}*/}
-                {/*       source={professionalData.foto}/>*/}
-            </View>
-            <View style={styles.all}>
-                <Text style={styles.title}>{professionalData.nome_completo}, {professionalData.idade}</Text>
-                <TouchableOpacity style={styles.starGroup}>
-                    <View style={styles.alignStar}>
-                        {professionalData.media_avaliacao > 0 ? (
-                            Array.from({ length: professionalData.media_avaliacao }).map((_, index) => (
-                                <Image style={{margin: 2, width: 15, height: 18}}
-                                       source={require('../img/icons/star.png')}/>
-                            ))
-                        ) : (
-                            <Text style={styles.noAvaliation}>Não possui avaliações</Text>
-                        )}
+        <>
+            <ScrollView style={styles.container}>
+                <View style={styles.content}>
+                    <View style={styles.topo}>
+                        <Image style={{flex: 1, width: '100%', marginTop: 10, height: 350, borderRadius: 20}}
+                               source={require('../img/homem.jpg')}/>
+                        {/*<Image style={{flex: 1, width: '100%', marginTop: 10, height: 350, borderRadius: 20}}*/}
+                        {/*       source={professionalData.foto}/>*/}
                     </View>
-                    {professionalData.media_avaliacao > 0 && (
-                        <Text style={styles.starText}>
-                            (Média: {(Math.round(professionalData.media_avaliacao * 10) / 10).toFixed(1)})
-                        </Text>
-                    )}
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.alignInfo}>
-                    <Image style={{ width: 15, height: 18 }} source={require('../img/icons/building.png')} />
-                    <Text style={[styles.profissao, { textTransform: 'capitalize' }]}>
-                        Profissão: {professionalData.profissao}
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.alignInfo}>
-                    <Image style={{ width: 15, height: 18 }} source={require('../img/icons/gender.png')} />
-                    <Text style={[styles.profissao, { textTransform: 'capitalize' }]}>
-                        Gênero: {professionalData.genero}
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.alignInfo}>
-                    <Image style={{ width: 15, height: 18 }} source={require('../img/icons/gps.png')} />
-                    <Text style={[styles.profissao, { textTransform: 'capitalize' }]}>
-                        Cidade: {professionalData.cidade} - {professionalData.estado}
-                    </Text>
-                </TouchableOpacity>
+                    <View style={styles.all}>
+                        <Text style={styles.title}>{professionalData.nome_completo}, {professionalData.idade}</Text>
+                        <TouchableOpacity style={styles.starGroup}>
+                            <View style={styles.alignStar}>
+                                {professionalData.media_avaliacao > 0 ? (
+                                    Array.from({length: professionalData.media_avaliacao}).map((_, index) => (
+                                        <Image style={{margin: 2, width: 15, height: 18}}
+                                               source={require('../img/icons/star.png')}/>
+                                    ))
+                                ) : (
+                                    <Text style={styles.noAvaliation}>Não possui avaliações</Text>
+                                )}
+                            </View>
+                            {professionalData.media_avaliacao > 0 && (
+                                <Text style={styles.starText}>
+                                    (Média: {(Math.round(professionalData.media_avaliacao * 10) / 10).toFixed(1)})
+                                </Text>
+                            )}
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.alignInfo}>
+                            <Image style={{width: 15, height: 18}} source={require('../img/icons/building.png')}/>
+                            <Text style={[styles.profissao, {textTransform: 'capitalize'}]}>
+                                Profissão: {professionalData.profissao}
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.alignInfo}>
+                            <Image style={{width: 15, height: 18}} source={require('../img/icons/gender.png')}/>
+                            <Text style={[styles.profissao, {textTransform: 'capitalize'}]}>
+                                Gênero: {professionalData.genero}
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.alignInfo}>
+                            <Image style={{width: 15, height: 18}} source={require('../img/icons/gps.png')}/>
+                            <Text style={[styles.profissao, {textTransform: 'capitalize'}]}>
+                                Cidade: {professionalData.cidade} - {professionalData.estado}
+                            </Text>
+                        </TouchableOpacity>
 
-            </View>
-            <View style={styles.info}>
-                <Text style={styles.descricaoTitleText}>
-                    Sobre mim
-                </Text>
-                <View style={styles.descricaoBox}>
-                    <Text style={styles.descricao}>{professionalData.descricao}
-                    </Text>
+                    </View>
+                    <View style={styles.info}>
+                        <Text style={styles.descricaoTitleText}>
+                            Sobre mim
+                        </Text>
+                        <View style={styles.descricaoBox}>
+                            <Text style={styles.descricao}>{professionalData.descricao}
+                            </Text>
+                        </View>
+                    </View>
+                    <View style={styles.buttons}>
+                        <TouchableOpacity style={styles.btnEdit} onPress={handleSubmit}>
+                            <Image source={require('../img/icons/file-earmark-text-fill.png')}/>
+                            <Text style={styles.btnText}>Verificar Agenda</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            </View>
-            <View style={styles.buttons}>
-                <TouchableOpacity style={styles.btnEdit} onPress={handleSubmit}>
-                    <Image source={require('../img/icons/file-earmark-text-fill.png')}/>
-                    <Text style={styles.btnText}>Verificar Agenda</Text>
-                </TouchableOpacity>
-            </View>
-        </ScrollView>
+            </ScrollView>
+            <MenuCliente csrfToken={csrfToken} userId={userId} navigation={navigation}></MenuCliente>
+        </>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         backgroundColor: '#ffff',
+        flex: 1,
+    },
+    content: {
         flex: 1,
     },
     topo: {

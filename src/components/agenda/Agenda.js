@@ -156,6 +156,7 @@ export default function Agenda({route, navigation}) {
 
                     if (response.status >= 200 && response.status < 300) {
                         closeModal()
+                        navigation.navigate('Listagem', { userId, csrfToken });
                         ToastAndroid.show(
                             "Solicitação enviada com sucesso",
                             ToastAndroid.SHORT,

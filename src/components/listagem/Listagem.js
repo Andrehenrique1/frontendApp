@@ -21,6 +21,7 @@ import piscineiro from '../img/profissoes/piscineiroIcon.png';
 import {FontAwesome} from "@expo/vector-icons";
 import {Picker} from "@react-native-picker/picker";
 import {BASE_URL} from "../../Config";
+import MenuCliente from "../componentes/menuCliente";
 
 export default function Listagem({route, navigation}) {
 
@@ -97,125 +98,134 @@ export default function Listagem({route, navigation}) {
     }, []);
 
     const handleProfileClick = (item) => {
-        navigation.navigate('Perfil do Autonomo', { professionalData: item, userId, csrfToken });
+        navigation.navigate('Perfil do Autonomo', {professionalData: item, userId, csrfToken});
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.list}>
-                {openFilter ? (
-                    <View style={styles.overlay}>
-                        <View style={styles.filterGroup}>
+        <>
+            <ScrollView style={styles.container}>
+                <View style={styles.content}>
+                    <View style={styles.list}>
+                        {openFilter ? (
+                            <View style={styles.overlay}>
+                                <View style={styles.filterGroup}>
+                                    <View style={styles.align}>
+                                        <Text style={styles.titlePage}>Busque por um profissional</Text>
+                                        <View style={styles.alignFilter}>
+                                            <TouchableOpacity onPress={() => closeOption()}>
+                                                <View style={styles.filterContainer}>
+                                                    <FontAwesome name="window-close" size={20} color="#666"/>
+                                                    <Text style={styles.profissao}>Fechar</Text>
+                                                </View>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                </View>
+                                <View style={styles.form}>
+                                    <Text style={styles.subtitle}>
+                                        Busque pelo nome
+                                    </Text>
+                                    <TextInput
+                                        style={styles.input}
+                                        value={name}
+                                        onChangeText={(text) => setName(text)}
+                                        placeholder="Nome"
+                                        autoCapitalize="none"
+                                        keyboardType="name"
+                                        textContentType="name"
+                                    />
+                                    <View style={styles.inputFlex}>
+                                        <Text style={styles.subtitle}>Busque pela profissão</Text>
+                                        <Picker
+                                            style={styles.picker}
+                                            selectedValue={profession}
+                                            onValueChange={(itemValue) => setProfession(itemValue)}
+                                        >
+                                            <Picker.Item label="Selecione uma profissão" value=""/>
+                                            <Picker.Item label="Pintor" value="pintor"/>
+                                            <Picker.Item label="Eletricista" value="eletricista"/>
+                                            <Picker.Item label="Pedreiro" value="pedreiro"/>
+                                            <Picker.Item label="Faxineiro(a)" value="faxineiro"/>
+                                            <Picker.Item label="Cuidador(a)" value="cuidador"/>
+                                            <Picker.Item label="Encanador(a)" value="encanador"/>
+                                            <Picker.Item label="Piscineiro" value="piscineiro"/>
+                                            <Picker.Item label="Chaveiro" value="chaveiro"/>
+                                        </Picker>
+                                    </View>
+                                    <View style={styles.inputFlex}>
+                                        <Text style={styles.subtitle}>Busque pela avaliação</Text>
+                                        <Picker
+                                            style={styles.picker}
+                                            selectedValue={orderBy}
+                                            onValueChange={(itemValue) => setOrderBy(itemValue)}
+                                        >
+                                            <Picker.Item label="Selecione uma opção" value=""/>
+                                            <Picker.Item label="Ordenar pelo mais avaliado" value="maior"/>
+                                            <Picker.Item label="Ordenar pelo menos avaliado" value="menor"/>
+                                        </Picker>
+                                    </View>
+                                    {hasFilters() && (
+                                        <TouchableOpacity style={styles.buttonClearOne} onPress={clearFilters}>
+                                            <Text style={styles.buttonClear}>Limpar Filtros</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                    <TouchableOpacity style={styles.button} onPress={handleFilter}>
+                                        <Text style={styles.buttonText}>Filtrar</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        ) : (
                             <View style={styles.align}>
                                 <Text style={styles.titlePage}>Busque por um profissional</Text>
                                 <View style={styles.alignFilter}>
-                                    <TouchableOpacity onPress={() => closeOption()}>
+                                    <TouchableOpacity onPress={() => setOpenFilter(true)}>
                                         <View style={styles.filterContainer}>
-                                            <FontAwesome name="window-close" size={20} color="#666"/>
-                                            <Text style={styles.profissao}>Fechar</Text>
+                                            <Image style={{width: 22, height: 22}} source={filter}/>
+                                            <Text style={styles.profissao}>Filtrar</Text>
                                         </View>
                                     </TouchableOpacity>
                                 </View>
                             </View>
-                        </View>
-                        <View style={styles.form}>
-                            <Text style={styles.subtitle}>
-                                Busque pelo nome
-                            </Text>
-                            <TextInput
-                                style={styles.input}
-                                value={name}
-                                onChangeText={(text) => setName(text)}
-                                placeholder="Nome"
-                                autoCapitalize="none"
-                                keyboardType="name"
-                                textContentType="name"
-                            />
-                            <View style={styles.inputFlex}>
-                                <Text style={styles.subtitle}>Busque pela profissão</Text>
-                                <Picker
-                                    style={styles.picker}
-                                    selectedValue={profession}
-                                    onValueChange={(itemValue) => setProfession(itemValue)}
-                                >
-                                    <Picker.Item label="Selecione uma profissão" value=""/>
-                                    <Picker.Item label="Pintor" value="pintor"/>
-                                    <Picker.Item label="Eletricista" value="eletricista"/>
-                                    <Picker.Item label="Pedreiro" value="pedreiro"/>
-                                    <Picker.Item label="Faxineiro(a)" value="faxineiro"/>
-                                    <Picker.Item label="Cuidador(a)" value="cuidador"/>
-                                    <Picker.Item label="Encanador(a)" value="encanador"/>
-                                    <Picker.Item label="Piscineiro" value="piscineiro"/>
-                                    <Picker.Item label="Chaveiro" value="chaveiro"/>
-                                </Picker>
-                            </View>
-                            <View style={styles.inputFlex}>
-                                <Text style={styles.subtitle}>Busque pela avaliação</Text>
-                                <Picker
-                                    style={styles.picker}
-                                    selectedValue={orderBy}
-                                    onValueChange={(itemValue) => setOrderBy(itemValue)}
-                                >
-                                    <Picker.Item label="Selecione uma opção" value=""/>
-                                    <Picker.Item label="Ordenar pelo mais avaliado" value="maior"/>
-                                    <Picker.Item label="Ordenar pelo menos avaliado" value="menor"/>
-                                </Picker>
-                            </View>
-                            {hasFilters() && (
-                                <TouchableOpacity style={styles.buttonClearOne} onPress={clearFilters}>
-                                    <Text style={styles.buttonClear}>Limpar Filtros</Text>
-                                </TouchableOpacity>
-                            )}
-                            <TouchableOpacity style={styles.button} onPress={handleFilter}>
-                                <Text style={styles.buttonText}>Filtrar</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                ) : (
-                    <View style={styles.align}>
-                        <Text style={styles.titlePage}>Busque por um profissional</Text>
-                        <View style={styles.alignFilter}>
-                            <TouchableOpacity onPress={() => setOpenFilter(true)}>
-                                <View style={styles.filterContainer}>
-                                    <Image style={{width: 22, height: 22}} source={filter}/>
-                                    <Text style={styles.profissao}>Filtrar</Text>
-                                </View>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                )}
-                <View style={styles.list}>
-                    {filteredData.map((item) => (
-                        <TouchableOpacity style={styles.box} key={item.id} onPress={() => handleProfileClick(item)}>
-                            <Image source={profissaoImages[item.profissao]} style={styles.icon} />
-                            <View style={styles.content}>
-                                <Text style={styles.name}>{item.nome_completo}</Text>
-                                <Text>
-                                    Profissão: <Text style={styles.span}>{item.profissao}</Text>
-                                </Text>
-                                <View style={styles.avaliation}>
-                                    {item.media_avaliacao > 0 ? (
-                                        Array.from({ length: item.media_avaliacao }).map((_, index) => (
-                                            <Image
-                                                source={require('../img/icons/star.png')}
-                                                style={styles.avaliationIcon}
-                                            />
-                                        ))
-                                    ) : (
-                                        <Text style={styles.noAvaliation}>Não possui avaliações</Text>
-                                    )}
-                                    {item.media_avaliacao > 0 && (
-                                        <Text style={styles.numberAvaliation}>
-                                            (Média: {(Math.round(item.media_avaliacao * 10) / 10).toFixed(1)})
+                        )}
+                        <View style={styles.list}>
+                            {filteredData.map((item, index) => (
+                                <TouchableOpacity style={[
+                                    styles.box,
+                                    index === filteredData.length - 1 ? { marginBottom: 70 } : null
+                                ]} key={item.id}
+                                                  onPress={() => handleProfileClick(item)}>
+                                    <Image source={profissaoImages[item.profissao]} style={styles.icon}/>
+                                    <View style={styles.content}>
+                                        <Text style={styles.name}>{item.nome_completo}</Text>
+                                        <Text>
+                                            Profissão: <Text style={styles.span}>{item.profissao}</Text>
                                         </Text>
-                                    )}
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-                    ))}
+                                        <View style={styles.avaliation}>
+                                            {item.media_avaliacao > 0 ? (
+                                                Array.from({length: item.media_avaliacao}).map((_, index) => (
+                                                    <Image
+                                                        source={require('../img/icons/star.png')}
+                                                        style={styles.avaliationIcon}
+                                                    />
+                                                ))
+                                            ) : (
+                                                <Text style={styles.noAvaliation}>Não possui avaliações</Text>
+                                            )}
+                                            {item.media_avaliacao > 0 && (
+                                                <Text style={styles.numberAvaliation}>
+                                                    (Média: {(Math.round(item.media_avaliacao * 10) / 10).toFixed(1)})
+                                                </Text>
+                                            )}
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
                 </View>
-            </View>
-        </ScrollView>
+            </ScrollView>
+            <MenuCliente csrfToken={csrfToken} userId={userId} navigation={navigation}></MenuCliente>
+        </>
     );
 }
 
