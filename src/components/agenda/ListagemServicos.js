@@ -6,7 +6,7 @@ import {
     View,
     Image,
     TextInput,
-    TouchableOpacity, ScrollView
+    TouchableOpacity, ScrollView, Modal, ToastAndroid
 } from 'react-native';
 import filter from '../img/icons/filter.png';
 import chaveiro from '../img/profissoes/chaveiro.png';
@@ -21,39 +21,69 @@ import piscineiro from '../img/profissoes/piscineiroIcon.png';
 import {FontAwesome} from "@expo/vector-icons";
 import {Picker} from "@react-native-picker/picker";
 import {BASE_URL} from "../../Config";
+import MenuAutonomo from "../componentes/menuAutonomo";
+import MenuCliente from "../componentes/menuCliente";
+import axios from "axios";
 
 export default function ListagemServicos({route, navigation}) {
 
-    const [data, setData] = useState([]);
     const [openFilter, setOpenFilter] = useState(false);
-    const [profession, setProfession] = useState('');
-    const [name, setName] = useState('');
-    const [orderBy, setOrderBy] = useState('');
+    const [status, setStatus] = useState('');
     const [filteredData, setFilteredData] = useState([]);
+    const [data, setData] = useState([]);
+    const [hasServices, setHasServices] = useState(false);
+    const [isModalDetail, setIsModalDetail] = useState(false);
+    const [selectedService, setSelectedService] = useState(null);
+    const [avaliacao, setAvaliacao] = useState('');
+    const [avaliacaoModal, setAvaliacaoModal] = useState(false);
 
     const {userId} = route.params;
     const {csrfToken} = route.params;
+    const handleClick = (service) => {
+        setSelectedService(service);
+        setIsModalDetail(true);
+    };
+
+    const closeModal = () => {
+        setIsModalDetail(false);
+    };
+
+    const closeModalAvaliacao = () => {
+        setAvaliacaoModal(false);
+    };
+
+    useEffect(() => {
+        fetch(`${BASE_URL}/get-meus-pedidos?idCliente=${userId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then((data) => {
+                setData(data);
+                setHasServices(data.length > 0); // Verifica se há serviços disponíveis
+            })
+            .catch((error) => {
+                console.error('Error fetching notification count:', error);
+            });
+    }, []);
 
     const closeOption = () => {
         setOpenFilter(false);
     };
 
-    const profissaoImages = {
-        chaveiro: chaveiro,
-        cuidador: cuidador,
-        encanador: encanador,
-        eletricista: eletricista,
-        faxineiro: faxineiro,
-        jardineiro: jardineiro,
-        pedreiro: pedreiro,
-        pintor: pintor,
-        piscineiro: piscineiro,
+    const hasFilters = () => {
+        return !!status;
     };
 
     const clearFilters = () => {
-        setProfession('');
-        setName('');
-        setOrderBy('');
+        setStatus('');
 
         // Recarregue a lista completa (sem filtros)
         fetch(`${BASE_URL}/get-autonomo`)
@@ -67,12 +97,22 @@ export default function ListagemServicos({route, navigation}) {
     };
 
     const handleFilter = () => {
-        const apiUrl = `${BASE_URL}/get-autonomo?profession=${profession}&name=${name}&orderBy=${orderBy}`;
+        const apiUrl = `${BASE_URL}/get-meus-servicos?idCliente=${userId}&statusFilter=${status}`;
 
-        fetch(apiUrl)
-            .then((response) => response.json())
+        fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then((responseData) => {
-                setFilteredData(responseData);
+                setData(responseData); // Atualize o estado 'data' com os serviços filtrados
                 setOpenFilter(false);
             })
             .catch((error) => {
@@ -80,146 +120,404 @@ export default function ListagemServicos({route, navigation}) {
             });
     };
 
-    const hasFilters = () => {
-        return !!name || !!profession || !!orderBy;
+
+    const servicesPendentes = data.filter(service => service.status === 'pendente');
+    const servicesConcluidos = data.filter(service => service.status === 'concluído');
+    const servicesEmProgresso = data.filter(service => service.status === 'em_progresso');
+
+    const formatDate = (dateStr) => {
+        const date = new Date(dateStr);
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+
+        return `${day < 10 ? '0' : ''}${day}/${month < 10 ? '0' : ''}${month}/${year}`;
     };
 
-    useEffect(() => {
-        fetch(`${BASE_URL}/get-autonomo`)
-            .then((response) => response.json())
-            .then((responseData) => {
-                setData(responseData);
-                setFilteredData(responseData);
+    const formatTime = (timeStr) => {
+        const [hour, minute] = timeStr.split(':');
+        const formattedHour = parseInt(hour, 10); // Certifique-se de que seja um número inteiro
+        return `${formattedHour < 10 ? '0' : ''}${formattedHour}:${minute}`;
+    };
+
+    const avaliar = (idAutonomo) => {
+        if (selectedService) {
+            fetch(`${BASE_URL}/avaliacao?idCliente=${userId}&idAutonomo=${idAutonomo}&avaliacao=${avaliacao}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
             })
-            .catch((error) => {
-                console.error('Error fetching data:', error);
-            });
-    }, []);
+                .then((response) => {
+                    if (response.ok) {
+                        closeModal();
+                        closeModalAvaliacao();
+                        fetch(`${BASE_URL}/get-meus-pedidos?idCliente=${userId}`)
+                            .then((response) => response.json())
+                            .then((responseData) => {
+                                setData(responseData);
+                            })
+                            .catch((error) => {
+                                console.error('Error fetching data:', error);
+                            });
+                    } else {
+                        throw new Error('Network response was not ok');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error accepting service:', error);
+                });
+        }
+    }
 
-    const handleProfileClick = (item) => {
-        navigation.navigate('Perfil do Autonomo', { professionalData: item, userId, csrfToken });
-    };
+    const handleDeleteService = (idTarefa) => {
+        if (selectedService) {
+            fetch(`${BASE_URL}/deletar-agendamento/${idTarefa}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+            })
+                .then((response) => {
+                    if (response.ok) {
+                        closeModal();
+                        fetch(`${BASE_URL}/get-meus-pedidos?idCliente=${userId}`)
+                            .then((response) => response.json())
+                            .then((responseData) => {
+                                setData(responseData);
+                            })
+                            .catch((error) => {
+                                console.error('Error fetching data:', error);
+                            });
+                    } else {
+                        throw new Error('Network response was not ok');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error accepting service:', error);
+                });
+        }
+    }
 
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.list}>
-                {openFilter ? (
-                    <View style={styles.overlay}>
-                        <View style={styles.filterGroup}>
-                            <View style={styles.align}>
-                                <Text style={styles.titlePage}>Busque por um profissional</Text>
-                                <View style={styles.alignFilter}>
-                                    <TouchableOpacity onPress={() => closeOption()}>
-                                        <View style={styles.filterContainer}>
-                                            <FontAwesome name="window-close" size={20} color="#666"/>
-                                            <Text style={styles.profissao}>Fechar</Text>
-                                        </View>
+        <>
+            <ScrollView style={styles.container}>
+                <View style={styles.list}>
+                    {openFilter ? (
+                        <View style={styles.overlay}>
+                            <View style={styles.filterGroup}>
+                                <View style={styles.align}>
+                                    <View style={styles.alignFilter}>
+                                        <TouchableOpacity onPress={() => closeOption()}>
+                                            <View style={styles.filterContainer}>
+                                                <FontAwesome name="window-close" size={20} color="#666"/>
+                                                <Text style={styles.profissao}>Fechar</Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            </View>
+                            <View style={styles.form}>
+                                <View style={styles.inputFlex}>
+                                    <Text style={styles.subtitle}>Busque pelo status do serviço</Text>
+                                    <Picker
+                                        style={styles.picker}
+                                        selectedValue={status}
+                                        onValueChange={(itemValue) => setStatus(itemValue)}
+                                    >
+                                        <Picker.Item label="Selecione um status" value=""/>
+                                        <Picker.Item label="Pendente" value="pendente"/>
+                                        <Picker.Item label="Em progresso" value="em_progresso"/>
+                                        <Picker.Item label="Concluído" value="concluido"/>
+                                    </Picker>
+                                </View>
+                                {hasFilters() && (
+                                    <TouchableOpacity style={styles.buttonClearOne} onPress={clearFilters}>
+                                        <Text style={styles.buttonClear}>Limpar Filtros</Text>
                                     </TouchableOpacity>
-                                </View>
-                            </View>
-                        </View>
-                        <View style={styles.form}>
-                            <Text style={styles.subtitle}>
-                                Busque pelo nome
-                            </Text>
-                            <TextInput
-                                style={styles.input}
-                                value={name}
-                                onChangeText={(text) => setName(text)}
-                                placeholder="Nome"
-                                autoCapitalize="none"
-                                keyboardType="name"
-                                textContentType="name"
-                            />
-                            <View style={styles.inputFlex}>
-                                <Text style={styles.subtitle}>Busque pela profissão</Text>
-                                <Picker
-                                    style={styles.picker}
-                                    selectedValue={profession}
-                                    onValueChange={(itemValue) => setProfession(itemValue)}
-                                >
-                                    <Picker.Item label="Selecione uma profissão" value=""/>
-                                    <Picker.Item label="Pintor" value="pintor"/>
-                                    <Picker.Item label="Eletricista" value="eletricista"/>
-                                    <Picker.Item label="Pedreiro" value="pedreiro"/>
-                                    <Picker.Item label="Faxineiro(a)" value="faxineiro"/>
-                                    <Picker.Item label="Cuidador(a)" value="cuidador"/>
-                                    <Picker.Item label="Encanador(a)" value="encanador"/>
-                                    <Picker.Item label="Piscineiro" value="piscineiro"/>
-                                    <Picker.Item label="Chaveiro" value="chaveiro"/>
-                                </Picker>
-                            </View>
-                            <View style={styles.inputFlex}>
-                                <Text style={styles.subtitle}>Busque pela avaliação</Text>
-                                <Picker
-                                    style={styles.picker}
-                                    selectedValue={orderBy}
-                                    onValueChange={(itemValue) => setOrderBy(itemValue)}
-                                >
-                                    <Picker.Item label="Selecione uma opção" value=""/>
-                                    <Picker.Item label="Ordenar pelo mais avaliado" value="maior"/>
-                                    <Picker.Item label="Ordenar pelo menos avaliado" value="menor"/>
-                                </Picker>
-                            </View>
-                            {hasFilters() && (
-                                <TouchableOpacity style={styles.buttonClearOne} onPress={clearFilters}>
-                                    <Text style={styles.buttonClear}>Limpar Filtros</Text>
+                                )}
+                                <TouchableOpacity style={styles.button} onPress={handleFilter}>
+                                    <Text style={styles.buttonText}>Filtrar</Text>
                                 </TouchableOpacity>
-                            )}
-                            <TouchableOpacity style={styles.button} onPress={handleFilter}>
-                                <Text style={styles.buttonText}>Filtrar</Text>
-                            </TouchableOpacity>
+                            </View>
                         </View>
-                    </View>
-                ) : (
-                    <View style={styles.align}>
-                        <Text style={styles.titlePage}>Busque por um profissional</Text>
-                        <View style={styles.alignFilter}>
-                            <TouchableOpacity onPress={() => setOpenFilter(true)}>
-                                <View style={styles.filterContainer}>
-                                    <Image style={{width: 22, height: 22}} source={filter}/>
-                                    <Text style={styles.profissao}>Filtrar</Text>
-                                </View>
-                            </TouchableOpacity>
+                    ) : (
+                        <View style={styles.align}>
+                            <View style={styles.alignFilter}>
+                                <TouchableOpacity onPress={() => setOpenFilter(true)}>
+                                    <View style={styles.filterContainer}>
+                                        <Image style={{width: 22, height: 22}} source={filter}/>
+                                        <Text style={styles.profissao}>Filtrar</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            </View>
                         </View>
-                    </View>
+                    )}
+                </View>
+                {servicesPendentes.length > 0 && (
+                    <Text style={styles.titlePage}>Pedidos Pendentes</Text>
+                )}
+                {servicesPendentes.length === 0 && !hasServices && (
+                    <Text style={styles.noServicesText}>Você não tem nenhum serviço solicitado</Text>
                 )}
                 <View style={styles.list}>
-                    {filteredData.map((item) => (
-                        <TouchableOpacity style={styles.box} key={item.id} onPress={() => handleProfileClick(item)}>
-                            <Image source={profissaoImages[item.profissao]} style={styles.icon} />
+                    {servicesPendentes.map(service => (
+                        <TouchableOpacity style={styles.box} key={service.id} onPress={() => handleClick(service)}>
                             <View style={styles.content}>
-                                <Text style={styles.name}>{item.nome_completo}</Text>
                                 <Text>
-                                    Profissão: <Text style={styles.span}>{item.profissao}</Text>
+                                    Cliente: <Text style={styles.span}>{service.nome_completo}</Text>
                                 </Text>
-                                <View style={styles.avaliation}>
-                                    {item.media_avaliacao > 0 ? (
-                                        Array.from({ length: item.media_avaliacao }).map((_, index) => (
-                                            <Image
-                                                source={require('../img/icons/star.png')}
-                                                style={styles.avaliationIcon}
-                                            />
-                                        ))
-                                    ) : (
-                                        <Text style={styles.noAvaliation}>Não possui avaliações</Text>
-                                    )}
-                                    {item.media_avaliacao > 0 && (
-                                        <Text style={styles.numberAvaliation}>
-                                            (Média: {(Math.round(item.media_avaliacao * 10) / 10).toFixed(1)})
-                                        </Text>
-                                    )}
-                                </View>
+                                <Text>
+                                    Status: <Text style={styles.span}>{service.status}</Text>
+                                </Text>
+                                <Text>
+                                    Data: <Text style={styles.span}>{formatDate(service.data)}</Text>
+                                </Text>
+                                <Text>
+                                    Horário: <Text style={styles.span}>{formatTime(service.horario)}</Text>
+                                </Text>
                             </View>
                         </TouchableOpacity>
                     ))}
                 </View>
-            </View>
-        </ScrollView>
+                {servicesEmProgresso.length > 0 && (
+                    <Text style={styles.titlePage}>Pedidos em progresso</Text>
+                )}
+                <View style={styles.list}>
+                    {servicesEmProgresso.map(service => (
+                        <TouchableOpacity style={styles.progresso} key={service.id}
+                                          onPress={() => handleClick(service)}>
+                            <View style={styles.content}>
+                                <Text>
+                                    Cliente: <Text style={styles.span}>{service.nome_completo}</Text>
+                                </Text>
+                                <Text>
+                                    Status: <Text
+                                    style={styles.span}>{service.status === 'em_progresso' ? 'Em progresso' : service.status}</Text>
+                                </Text>
+                                <Text>
+                                    Data: <Text style={styles.span}>{formatDate(service.data)}</Text>
+                                </Text>
+                                <Text>
+                                    Horário: <Text style={styles.span}>{formatTime(service.horario)}</Text>
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+                {servicesConcluidos.length > 0 && (
+                    <Text style={styles.titlePage}>Pedidos Concluídos</Text>
+                )}
+                <View style={styles.list}>
+                    {servicesConcluidos.map(service => (
+                        <TouchableOpacity style={styles.concluido} key={service.id}
+                                          onPress={() => handleClick(service)}>
+                            <View style={styles.content}>
+                                <Text>
+                                    Cliente: <Text style={styles.span}>{service.nome_completo}</Text>
+                                </Text>
+                                <Text>
+                                    Status: <Text style={styles.span}>{service.status}</Text>
+                                </Text>
+                                <Text>
+                                    Data: <Text style={styles.span}>{formatDate(service.data)}</Text>
+                                </Text>
+                                <Text>
+                                    Horário: <Text style={styles.span}>{formatTime(service.horario)}</Text>
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            </ScrollView>
+            <Modal visible={isModalDetail} animationType="slide" transparent>
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Serviço Solicitado</Text>
+                            <TouchableOpacity style={styles.closeButtonX} onPress={closeModal}>
+                                <Text style={styles.closeButtonXText}>X</Text>
+                            </TouchableOpacity>
+                        </View>
+                        {selectedService && (
+                            <>
+                                <View style={styles.modalGroup}>
+                                    <Text style={styles.modalSubTitle}>
+                                        <Text
+                                            style={styles.subTitleBold}>Cliente:</Text> {selectedService.nome_completo}
+                                    </Text>
+                                    <Text style={styles.modalSubTitle}>
+                                        <Text style={styles.subTitleBold}>Dia:</Text> {formatDate(selectedService.data)}
+                                    </Text>
+                                    <Text style={styles.modalSubTitle}>
+                                        <Text
+                                            style={styles.subTitleBold}>Horário:</Text> {formatTime(selectedService.horario)}
+                                    </Text>
+                                    <Text style={styles.modalSubTitle}>
+                                        <Text style={styles.subTitleBold}>Descrição:</Text> {selectedService.descricao}
+                                    </Text>
+                                </View>
+
+                                <View style={styles.buttonContainer}>
+                                    <TouchableOpacity
+                                        style={styles.buttonGreen}
+                                        onPress={closeModal}
+                                    >
+                                        <Text style={styles.buttonText}>Confirmar</Text>
+                                    </TouchableOpacity>
+                                    {selectedService.status === 'pendente' ?
+                                        <>
+                                            <TouchableOpacity
+                                                style={styles.buttonRed}
+                                                onPress={() => handleDeleteService(selectedService.id)}
+                                            >
+                                                <Text style={styles.buttonText}>Cancelar Pedido</Text>
+                                            </TouchableOpacity>
+                                        </>
+                                        : ''}
+                                    {selectedService.status === 'concluído' ?
+                                        <TouchableOpacity
+                                            style={styles.buttonAvaliacao}
+                                            onPress={() => setAvaliacaoModal(true)}
+                                        >
+                                            <Text style={styles.buttonText}>Avaliar Serviço</Text>
+                                        </TouchableOpacity>
+                                        : ''}
+                                </View>
+                            </>
+                        )}
+                    </View>
+                </View>
+            </Modal>
+            <Modal visible={avaliacaoModal} animationType="slide" transparent>
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Avalie esse serviço</Text>
+                            <TouchableOpacity style={styles.closeButtonX} onPress={closeModalAvaliacao}>
+                                <Text style={styles.closeButtonXText}>X</Text>
+                            </TouchableOpacity>
+                        </View>
+                        {selectedService && (
+                            <View style={styles.modalGroupAvaliacao}>
+                                <Picker
+                                    style={styles.pickerAvaliacao}
+                                    selectedValue={avaliacao}
+                                    onValueChange={(itemValue) => setAvaliacao(itemValue)}
+                                >
+                                    <Picker.Item label="Nota 1 para o serviço" value={1.0}/>
+                                    <Picker.Item label="Nota 2 para o serviço" value={2.0}/>
+                                    <Picker.Item label="Nota 3 para o serviço" value={3.0}/>
+                                    <Picker.Item label="Nota 4 para o serviço" value={4.0}/>
+                                    <Picker.Item label="Nota 5 para o serviço" value={5.0}/>
+                                </Picker>
+                                <TouchableOpacity
+                                    style={styles.buttonAvaliacaoModal}
+                                    onPress={() => avaliar(selectedService.id_autonomo)}
+                                >
+                                    <Text style={styles.buttonText}>Confirmar avaliação</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
+                </View>
+            </Modal>
+            <MenuCliente csrfToken={csrfToken} userId={userId} navigation={navigation}/>
+        </>
     );
 }
 
 const styles = StyleSheet.create({
+    pickerAvaliacao: {
+        borderWidth: 2,
+        borderColor: 'transparent',
+        transitionProperty: 'borderColor, boxShadow',
+        transitionDuration: '0.3s',
+        transitionTimingFunction: 'ease-in-out',
+        width: '100%',
+        padding: 12,
+        marginVertical: 8,
+        borderRadius: 10,
+        boxSizing: 'border-box',
+        height: 50,
+        backgroundColor: '#f3f3fd',
+        color: '#8c8b8b'
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Adjust the opacity as needed
+    },
+    modalContent: {
+        width: '80%',
+        backgroundColor: '#fff',
+        padding: 20,
+        borderRadius: 10,
+    },
+    modalGroup: {
+        paddingTop: 10,
+        marginBottom: 20,
+    },
+    modalGroupAvaliacao: {
+        paddingTop: 10,
+        marginBottom: 20,
+    },
+    modalSubTitle: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 3,
+    },
+    subTitleBold: {
+        fontWeight: '600',
+    },
+    modalTitle: {
+        fontSize: 20,
+        color: '#222',
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    buttonGreen: {
+        backgroundColor: '#1333cd',
+        borderRadius: 12,
+        color: '#000',
+        borderWidth: 0,
+        padding: 10,
+        fontSize: 15,
+        fontWeight: '700',
+        width: '100%',
+        marginBottom: 20
+    },
+    buttonRed: {
+        backgroundColor: '#8c8b8b',
+        borderRadius: 12,
+        borderWidth: 0,
+        width: '100%',
+        padding: 10,
+        fontSize: 15,
+        fontWeight: '700',
+    },
+    buttonAvaliacao: {
+        backgroundColor: '#fc8d00',
+        borderRadius: 12,
+        borderWidth: 0,
+        width: '100%',
+        padding: 10,
+        fontSize: 15,
+        fontWeight: '700',
+    },
+    buttonAvaliacaoModal: {
+        marginTop: 10,
+        backgroundColor: '#fc8d00',
+        borderRadius: 12,
+        borderWidth: 0,
+        width: '100%',
+        padding: 10,
+        fontSize: 15,
+        fontWeight: '700',
+    },
     overlay: {
         position: 'relative',
         top: 0,
@@ -313,6 +611,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
+        marginBottom: 45,
     },
     list: {
         flexDirection: 'column',
@@ -328,12 +627,12 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     titlePage: {
-        textAlign: 'center',
-        fontSize: 18,
+        fontSize: 22,
         fontWeight: "bold",
-        marginTop: 10,
+        marginTop: 20,
+        marginBottom: 10,
+        marginLeft: 12,
         color: '#333',
-        marginRight: 10
     },
     alignFilter: {
         flexDirection: 'row',
@@ -343,7 +642,7 @@ const styles = StyleSheet.create({
         borderColor: '#e8e9eb',
         padding: 10,
         marginTop: 20,
-        marginBottom: 10,
+        marginBottom: 5,
         borderRadius: 10,
     },
     filterContainer: {
@@ -353,12 +652,53 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around'
     },
     box: {
+        justifyContent: 'space-between',
         flexDirection: 'row',
         padding: 15,
         paddingBottom: 20,
         paddingTop: 20,
         backgroundColor: '#F8F8F8',
         borderRadius: 10,
+        margin: 10,
+        shadowColor: '#2C2C2C',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+        elevation: 3,
+    },
+    concluido: {
+        justifyContent: 'space-between',
+        flexDirection: 'row',
+        padding: 15,
+        paddingBottom: 20,
+        paddingTop: 20,
+        backgroundColor: '#F8F8F8',
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#6fdc03',
+        margin: 10,
+        shadowColor: '#2C2C2C',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+        elevation: 3,
+    },
+    progresso: {
+        justifyContent: 'space-between',
+        flexDirection: 'row',
+        padding: 15,
+        paddingBottom: 20,
+        paddingTop: 20,
+        backgroundColor: '#F8F8F8',
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#0340dc',
         margin: 10,
         shadowColor: '#2C2C2C',
         shadowOffset: {
@@ -398,5 +738,29 @@ const styles = StyleSheet.create({
         textTransform: 'capitalize',
         marginLeft: 8,
         fontSize: 14,
+    },
+    noServicesText: {
+        fontSize: 18,
+        color: '#666', // Cor de texto desejada
+        textAlign: 'center', // Centralizar o texto
+        marginTop: 20, // Espaçamento superior para afastar do conteúdo anterior
+    },
+    closeButtonX: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 24,
+        height: 24,
+        borderRadius: 20,
+        backgroundColor: '#0340dc',
+    },
+    closeButtonXText: {
+        color: '#fff', // Text color
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
 });

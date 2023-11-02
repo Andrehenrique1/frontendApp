@@ -10,6 +10,15 @@ import {
 } from 'react-native';
 import {useRoute} from '@react-navigation/native';
 import MenuCliente from "../componentes/menuCliente";
+import chaveiro from "../img/profissoes/chaveiro.png";
+import cuidador from "../img/profissoes/cuidador.png";
+import encanador from "../img/profissoes/ecanadorIcon.png";
+import eletricista from "../img/profissoes/eletricistaIcon.png";
+import faxineiro from "../img/profissoes/faxineiraIcon.png";
+import jardineiro from "../img/profissoes/jardineiroIcon.png";
+import pedreiro from "../img/profissoes/pedreiroIcon.png";
+import pintor from "../img/profissoes/pintorIcon.png";
+import piscineiro from "../img/profissoes/piscineiroIcon.png";
 
 export default function VerAutonomo({navigation}) {
 
@@ -23,15 +32,40 @@ export default function VerAutonomo({navigation}) {
         navigation.navigate('Agenda', {professionalData, userId, csrfToken});
     };
 
+    const profissaoImages = {
+        chaveiro: chaveiro,
+        cuidador: cuidador,
+        encanador: encanador,
+        eletricista: eletricista,
+        faxineiro: faxineiro,
+        jardineiro: jardineiro,
+        pedreiro: pedreiro,
+        pintor: pintor,
+        piscineiro: piscineiro,
+    };
+
+    const professionImage = professionalData ? profissaoImages[professionalData.profissao] : null;
+
     return (
         <>
             <ScrollView style={styles.container}>
                 <View style={styles.content}>
                     <View style={styles.topo}>
-                        <Image style={{flex: 1, width: '100%', marginTop: 10, height: 350, borderRadius: 20}}
-                               source={require('../img/homem.jpg')}/>
                         {/*<Image style={{flex: 1, width: '100%', marginTop: 10, height: 350, borderRadius: 20}}*/}
                         {/*       source={professionalData.foto}/>*/}
+                        {professionImage && (
+                            <Image
+                                style={{ flex: 1, width: '100%', marginTop: 10, height: 380 }}
+                                // style={{ width: 100, height: 100 }} // Defina o tamanho desejado
+                                source={professionImage}
+                            />
+                        )}
+                    </View>
+                    <View style={styles.buttons}>
+                        <TouchableOpacity style={styles.btnEdit} onPress={handleSubmit}>
+                            <Image source={require('../img/icons/file-earmark-text-fill.png')}/>
+                            <Text style={styles.btnText}>Verificar Agenda</Text>
+                        </TouchableOpacity>
                     </View>
                     <View style={styles.all}>
                         <Text style={styles.title}>{professionalData.nome_completo}, {professionalData.idade}</Text>
@@ -81,12 +115,6 @@ export default function VerAutonomo({navigation}) {
                             </Text>
                         </View>
                     </View>
-                    <View style={styles.buttons}>
-                        <TouchableOpacity style={styles.btnEdit} onPress={handleSubmit}>
-                            <Image source={require('../img/icons/file-earmark-text-fill.png')}/>
-                            <Text style={styles.btnText}>Verificar Agenda</Text>
-                        </TouchableOpacity>
-                    </View>
                 </View>
             </ScrollView>
             <MenuCliente csrfToken={csrfToken} userId={userId} navigation={navigation}></MenuCliente>
@@ -112,6 +140,7 @@ const styles = StyleSheet.create({
         width: '100%',
         paddingLeft: 15,
         paddingRight: 15,
+        marginBottom: 70,
     },
     title: {
         fontSize: 25,
@@ -169,6 +198,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 15,
+        paddingBottom: 0,
     },
     btnEdit: {
         marginBottom: 15,

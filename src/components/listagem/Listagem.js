@@ -224,7 +224,7 @@ export default function Listagem({route, navigation}) {
                     </View>
                 </View>
             </ScrollView>
-            <MenuCliente csrfToken={csrfToken} userId={userId} navigation={navigation}></MenuCliente>
+            <MenuCliente csrfToken={csrfToken} userId={userId} navigation={navigation}/>
         </>
     );
 }

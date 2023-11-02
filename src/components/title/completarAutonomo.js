@@ -80,7 +80,7 @@ export default function CompletarAutonomo({navigation, route}) {
 
             if (response.status === 200) {
 
-                navigation.navigate('Perfil', {customerId, csrfToken});
+                navigation.navigate('Perfil', {customerId, csrfToken, photo});
             } else {
                 console.error('Request failed:', response.data);
             }

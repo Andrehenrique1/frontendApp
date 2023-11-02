@@ -38,6 +38,7 @@ export default function App() {
         <Stack.Screen name="Agenda" component={Agenda} />
         <Stack.Screen name="Serviços" component={ListagemServicos} />
         <Stack.Screen name="Meus Serviços" component={ListagemNotificacoes} />
+        <Stack.Screen name="Meus Pedidos" component={ListagemServicos} />
         <Stack.Screen name="Listagem" component={Listagem} />
         <Stack.Screen name="Perfil" component={PerfilAutonomo} />
         <Stack.Screen name="Perfil do Autonomo" component={VerAutonomo} />

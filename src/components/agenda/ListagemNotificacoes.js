@@ -6,7 +6,7 @@ import {
     View,
     Image,
     TextInput,
-    TouchableOpacity, ScrollView
+    TouchableOpacity, ScrollView, Modal
 } from 'react-native';
 import filter from '../img/icons/filter.png';
 import chaveiro from '../img/profissoes/chaveiro.png';
@@ -28,10 +28,44 @@ export default function ListagemNotificacoes({route, navigation}) {
     const [openFilter, setOpenFilter] = useState(false);
     const [status, setStatus] = useState('');
     const [filteredData, setFilteredData] = useState([]);
-
+    const [data, setData] = useState([]);
+    const [hasServices, setHasServices] = useState(false);
+    const [isModalDetail, setIsModalDetail] = useState(false);
     const {customerId} = route.params;
     const {csrfToken} = route.params;
     const {countNotifications} = route.params;
+    const [selectedService, setSelectedService] = useState(null);
+
+    const handleClick = (service) => {
+        setSelectedService(service);
+        setIsModalDetail(true);
+    };
+
+    const closeModal = () => {
+        setIsModalDetail(false);
+    };
+
+    useEffect(() => {
+        fetch(`${BASE_URL}/get-meus-servicos?idAutonomo=${customerId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then((data) => {
+                setData(data);
+                setHasServices(data.length > 0); // Verifica se há serviços disponíveis
+            })
+            .catch((error) => {
+                console.error('Error fetching notification count:', error);
+            });
+    }, []);
 
     const closeOption = () => {
         setOpenFilter(false);
@@ -56,18 +90,139 @@ export default function ListagemNotificacoes({route, navigation}) {
     };
 
     const handleFilter = () => {
-        const apiUrl = `${BASE_URL}/get-autonomo?status=${status}`;
+        const apiUrl = `${BASE_URL}/get-meus-servicos?idAutonomo=${customerId}&statusFilter=${status}`;
 
-        fetch(apiUrl)
-            .then((response) => response.json())
+        fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then((responseData) => {
-                setFilteredData(responseData);
+                setData(responseData); // Atualize o estado 'data' com os serviços filtrados
                 setOpenFilter(false);
             })
             .catch((error) => {
                 console.error('Error fetching data:', error);
             });
     };
+
+
+    const servicesPendentes = data.filter(service => service.status === 'pendente');
+    const servicesConcluidos = data.filter(service => service.status === 'concluído');
+    const servicesEmProgresso = data.filter(service => service.status === 'em_progresso');
+
+    const formatDate = (dateStr) => {
+        const date = new Date(dateStr);
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+
+        return `${day < 10 ? '0' : ''}${day}/${month < 10 ? '0' : ''}${month}/${year}`;
+    };
+
+    const formatTime = (timeStr) => {
+        const [hour, minute] = timeStr.split(':');
+        const formattedHour = parseInt(hour, 10); // Certifique-se de que seja um número inteiro
+        return `${formattedHour < 10 ? '0' : ''}${formattedHour}:${minute}`;
+    };
+
+
+    const handleAcceptService = (idTarefa) => {
+        if (selectedService) {
+            fetch(`${BASE_URL}/aceitar/${idTarefa}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+            })
+                .then((response) => {
+                    if (response.ok) {
+                        closeModal();
+                        fetch(`${BASE_URL}/get-meus-servicos?idAutonomo=${customerId}`)
+                            .then((response) => response.json())
+                            .then((responseData) => {
+                                setData(responseData);
+                            })
+                            .catch((error) => {
+                                console.error('Error fetching data:', error);
+                            });
+                    } else {
+                        throw new Error('Network response was not ok');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error accepting service:', error);
+                });
+        }
+    }
+
+    const handleConcluirService = (idTarefa) => {
+        if (selectedService) {
+            fetch(`${BASE_URL}/concluir/${idTarefa}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+            })
+                .then((response) => {
+                    if (response.ok) {
+                        closeModal();
+                        fetch(`${BASE_URL}/get-meus-servicos?idAutonomo=${customerId}`)
+                            .then((response) => response.json())
+                            .then((responseData) => {
+                                setData(responseData);
+                            })
+                            .catch((error) => {
+                                console.error('Error fetching data:', error);
+                            });
+                    } else {
+                        throw new Error('Network response was not ok');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error accepting service:', error);
+                });
+        }
+    }
+
+    const handleDeleteService = (idTarefa) => {
+        if (selectedService) {
+            fetch(`${BASE_URL}/deletar-agendamento/${idTarefa}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+            })
+                .then((response) => {
+                    if (response.ok) {
+                        closeModal();
+                        fetch(`${BASE_URL}/get-meus-servicos?idAutonomo=${customerId}`)
+                            .then((response) => response.json())
+                            .then((responseData) => {
+                                setData(responseData);
+                            })
+                            .catch((error) => {
+                                console.error('Error fetching data:', error);
+                            });
+                    } else {
+                        throw new Error('Network response was not ok');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error accepting service:', error);
+                });
+        }
+    }
 
     return (
         <>
@@ -89,16 +244,16 @@ export default function ListagemNotificacoes({route, navigation}) {
                             </View>
                             <View style={styles.form}>
                                 <View style={styles.inputFlex}>
-                                    <Text style={styles.subtitle}>Busque pela status do serviço</Text>
+                                    <Text style={styles.subtitle}>Busque pelo status do serviço</Text>
                                     <Picker
                                         style={styles.picker}
                                         selectedValue={status}
                                         onValueChange={(itemValue) => setStatus(itemValue)}
                                     >
                                         <Picker.Item label="Selecione um status" value=""/>
-                                        <Picker.Item label="Pendente" value="pintor"/>
-                                        <Picker.Item label="Em progresso" value="eletricista"/>
-                                        <Picker.Item label="Concluído" value="pedreiro"/>
+                                        <Picker.Item label="Pendente" value="pendente"/>
+                                        <Picker.Item label="Em progresso" value="em_progresso"/>
+                                        <Picker.Item label="Concluído" value="concluido"/>
                                     </Picker>
                                 </View>
                                 {hasFilters() && (
@@ -124,87 +279,212 @@ export default function ListagemNotificacoes({route, navigation}) {
                         </View>
                     )}
                 </View>
-                <Text style={styles.titlePage}>Serviços Pendentes</Text>
+                {servicesPendentes.length > 0 && (
+                    <Text style={styles.titlePage}>Serviços Pendentes</Text>
+                )}
+                {servicesPendentes.length === 0 && !hasServices && (
+                    <Text style={styles.noServicesText}>Nenhum serviço disponível</Text>
+                )}
                 <View style={styles.list}>
-                    <TouchableOpacity style={styles.box}>
-                        <View style={styles.content}>
-                            <Text>
-                                Cliente: <Text style={styles.span}>André Henrique</Text>
-                            </Text>
-                            <Text>
-                                Status: <Text style={styles.span}>Pendente</Text>
-                            </Text>
-                            <Text>
-                                Data: <Text style={styles.span}>15/06/2002</Text>
-                            </Text>
-                            <Text>
-                                Horário: <Text style={styles.span}>08:00</Text>
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.box}>
-                        <View style={styles.content}>
-                            <Text>
-                                Cliente: <Text style={styles.span}>André Henrique</Text>
-                            </Text>
-                            <Text>
-                                Status: <Text style={styles.span}>Pendente</Text>
-                            </Text>
-                            <Text>
-                                Data: <Text style={styles.span}>15/06/2002</Text>
-                            </Text>
-                            <Text>
-                                Horário: <Text style={styles.span}>08:00</Text>
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
+                    {servicesPendentes.map(service => (
+                        <TouchableOpacity style={styles.box} key={service.id} onPress={() => handleClick(service)}>
+                            <View style={styles.content}>
+                                <Text>
+                                    Cliente: <Text style={styles.span}>{service.name}</Text>
+                                </Text>
+                                <Text>
+                                    Status: <Text style={styles.span}>{service.status}</Text>
+                                </Text>
+                                <Text>
+                                    Data: <Text style={styles.span}>{formatDate(service.data)}</Text>
+                                </Text>
+                                <Text>
+                                    Horário: <Text style={styles.span}>{formatTime(service.horario)}</Text>
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+                    ))}
                 </View>
-                <Text style={styles.titlePage}>Serviços em progresso</Text>
+                {servicesEmProgresso.length > 0 && (
+                    <Text style={styles.titlePage}>Serviços em progresso</Text>
+                )}
                 <View style={styles.list}>
-                    <TouchableOpacity style={styles.progresso}>
-                        <View style={styles.content}>
-                            <Text>
-                                Cliente: <Text style={styles.span}>André Henrique</Text>
-                            </Text>
-                            <Text>
-                                Status: <Text style={styles.span}>Em progresso</Text>
-                            </Text>
-                            <Text>
-                                Data: <Text style={styles.span}>15/06/2002</Text>
-                            </Text>
-                            <Text>
-                                Horário: <Text style={styles.span}>08:00</Text>
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
+                    {servicesEmProgresso.map(service => (
+                        <TouchableOpacity style={styles.progresso} key={service.id}
+                                          onPress={() => handleClick(service)}>
+                            <View style={styles.content}>
+                                <Text>
+                                    Cliente: <Text style={styles.span}>{service.name}</Text>
+                                </Text>
+                                <Text>
+                                    Status: <Text
+                                    style={styles.span}>{service.status === 'em_progresso' ? 'Em progresso' : service.status}</Text>
+                                </Text>
+                                <Text>
+                                    Data: <Text style={styles.span}>{formatDate(service.data)}</Text>
+                                </Text>
+                                <Text>
+                                    Horário: <Text style={styles.span}>{formatTime(service.horario)}</Text>
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+                    ))}
                 </View>
-                <Text style={styles.titlePage}>Serviços Concluídos</Text>
+                {servicesConcluidos.length > 0 && (
+                    <Text style={styles.titlePage}>Serviços Concluídos</Text>
+                )}
                 <View style={styles.list}>
-                    <TouchableOpacity style={styles.concluido}>
-                        <View style={styles.content}>
-                            <Text>
-                                Cliente: <Text style={styles.span}>André Henrique</Text>
-                            </Text>
-                            <Text>
-                                Status: <Text style={styles.span}>Concluído</Text>
-                            </Text>
-                            <Text>
-                                Data: <Text style={styles.span}>15/06/2002</Text>
-                            </Text>
-                            <Text>
-                                Horário: <Text style={styles.span}>08:00</Text>
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
+                    {servicesConcluidos.map(service => (
+                        <TouchableOpacity style={styles.concluido} key={service.id}
+                                          onPress={() => handleClick(service)}>
+                            <View style={styles.content}>
+                                <Text>
+                                    Cliente: <Text style={styles.span}>{service.name}</Text>
+                                </Text>
+                                <Text>
+                                    Status: <Text style={styles.span}>{service.status}</Text>
+                                </Text>
+                                <Text>
+                                    Data: <Text style={styles.span}>{formatDate(service.data)}</Text>
+                                </Text>
+                                <Text>
+                                    Horário: <Text style={styles.span}>{formatTime(service.horario)}</Text>
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+                    ))}
                 </View>
             </ScrollView>
+            <Modal visible={isModalDetail} animationType="slide" transparent>
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Serviço Solicitado</Text>
+                            <TouchableOpacity style={styles.closeButtonX} onPress={closeModal}>
+                                <Text style={styles.closeButtonXText}>X</Text>
+                            </TouchableOpacity>
+                        </View>
+                        {selectedService && (
+                            <>
+                                <View style={styles.modalGroup}>
+                                    <Text style={styles.modalSubTitle}>
+                                        <Text style={styles.subTitleBold}>Cliente:</Text> {selectedService.name}
+                                    </Text>
+                                    <Text style={styles.modalSubTitle}>
+                                        <Text style={styles.subTitleBold}>Dia:</Text> {formatDate(selectedService.data)}
+                                    </Text>
+                                    <Text style={styles.modalSubTitle}>
+                                        <Text
+                                            style={styles.subTitleBold}>Horário:</Text> {formatTime(selectedService.horario)}
+                                    </Text>
+                                    <Text style={styles.modalSubTitle}>
+                                        <Text style={styles.subTitleBold}>Descrição:</Text> {selectedService.descricao}
+                                    </Text>
+                                </View>
+
+                                <View style={styles.buttonContainer}>
+                                    {selectedService.status === 'concluído' ?
+                                        <TouchableOpacity
+                                            style={styles.buttonGreen}
+                                            onPress={closeModal}
+                                        >
+                                            <Text style={styles.buttonText}>Confirmar</Text>
+                                        </TouchableOpacity>
+                                        : ''}
+                                    {selectedService.status === 'em_progresso' ?
+                                        <>
+                                            <TouchableOpacity
+                                                style={styles.buttonGreen}
+                                                onPress={() => handleConcluirService(selectedService.id)}
+                                            >
+                                                <Text style={styles.buttonText}>Marcar como concluído</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                style={styles.buttonRed}
+                                                onPress={() => handleDeleteService(selectedService.id)}
+                                            >
+                                                <Text style={styles.buttonText}>Cancelar Serviço</Text>
+                                            </TouchableOpacity>
+                                        </>
+                                        : ''}
+                                    {selectedService.status === 'pendente' ?
+                                        <>
+                                            <TouchableOpacity
+                                                style={styles.buttonGreen}
+                                                onPress={() => handleAcceptService(selectedService.id)}
+                                            >
+                                                <Text style={styles.buttonText}>Aceitar Serviço</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                style={styles.buttonRed}
+                                                onPress={() => handleDeleteService(selectedService.id)}
+                                            >
+                                                <Text style={styles.buttonText}>Recusar Serviço</Text>
+                                            </TouchableOpacity>
+                                        </>
+                                        : ''}
+                                </View>
+                            </>
+                        )}
+                    </View>
+                </View>
+            </Modal>
             <MenuAutonomo csrfToken={csrfToken} customerId={customerId} navigation={navigation}
-                          countNotifications={countNotifications}></MenuAutonomo>
+                          countNotifications={countNotifications}/>
         </>
     );
 }
 
 const styles = StyleSheet.create({
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Adjust the opacity as needed
+    },
+    modalContent: {
+        width: '80%',
+        backgroundColor: '#fff',
+        padding: 20,
+        borderRadius: 10,
+    },
+    modalGroup: {
+        marginBottom: 20,
+    },
+    modalSubTitle: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 3,
+    },
+    subTitleBold: {
+        fontWeight: '600',
+    },
+    modalTitle: {
+        fontSize: 20,
+        color: '#222',
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    buttonGreen: {
+        backgroundColor: '#1333cd',
+        borderRadius: 12,
+        color: '#000',
+        borderWidth: 0,
+        padding: 10,
+        fontSize: 15,
+        fontWeight: '700',
+        width: '100%',
+        marginBottom: 20
+    },
+    buttonRed: {
+        backgroundColor: '#8c8b8b',
+        borderRadius: 12,
+        borderWidth: 0,
+        width: '100%',
+        padding: 10,
+        fontSize: 15,
+        fontWeight: '700',
+    },
     overlay: {
         position: 'relative',
         top: 0,
@@ -298,6 +578,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
+        marginBottom: 45,
     },
     list: {
         flexDirection: 'column',
@@ -424,5 +705,29 @@ const styles = StyleSheet.create({
         textTransform: 'capitalize',
         marginLeft: 8,
         fontSize: 14,
+    },
+    noServicesText: {
+        fontSize: 18,
+        color: '#666', // Cor de texto desejada
+        textAlign: 'center', // Centralizar o texto
+        marginTop: 20, // Espaçamento superior para afastar do conteúdo anterior
+    },
+    closeButtonX: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 24,
+        height: 24,
+        borderRadius: 20,
+        backgroundColor: '#0340dc',
+    },
+    closeButtonXText: {
+        color: '#fff', // Text color
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
 });

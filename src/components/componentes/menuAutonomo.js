@@ -1,9 +1,8 @@
 import React, {useState} from 'react';
 import {View, TouchableOpacity, Text, StyleSheet, ScrollView, TextInput, Modal} from 'react-native';
 
-export default function MenuAutonomo({customerId, csrfToken, navigation, countNotifications}) {
+export default function MenuAutonomo({ customerId, csrfToken, navigation, countNotifications }) {
     const [isModal, setIsModal] = useState(false);
-
 
     const toggleModal = () => {
         setIsModal(!isModal);
@@ -18,7 +17,7 @@ export default function MenuAutonomo({customerId, csrfToken, navigation, countNo
             <View style={styles.container}>
                 <View style={styles.menu}>
                     <TouchableOpacity
-                        onPress={() => navigation.navigate('Perfil', {customerId, csrfToken})}
+                        onPress={() => navigation.navigate('Perfil', { customerId, csrfToken })}
                         style={styles.menuItem}
                     >
                         <Text style={styles.menuText}>Início</Text>
@@ -27,12 +26,12 @@ export default function MenuAutonomo({customerId, csrfToken, navigation, countNo
                         onPress={() => navigation.navigate('Meus Serviços', {
                             customerId,
                             csrfToken,
-                            countNotifications
+                            countNotifications,
                         })}
                         style={styles.menuItem}
                     >
                         <Text style={styles.menuText}>Meus serviços</Text>
-                        {countNotifications > 0 && (
+                        {countNotifications !== null && countNotifications > 0 && (
                             <View style={styles.notificacaoContainer}>
                                 <Text style={styles.notificacaoText}>{countNotifications}</Text>
                             </View>
@@ -50,13 +49,11 @@ export default function MenuAutonomo({customerId, csrfToken, navigation, countNo
                         <View style={styles.buttonContainer}>
                             <TouchableOpacity
                                 style={styles.buttonGreen}
-                                onPress={() => navigation.navigate('Login Autonomo')}>
+                                onPress={() => navigation.navigate('Login Autonomo')}
+                            >
                                 <Text style={styles.buttonText}>Confirmar</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.buttonRed}
-                                onPress={() => closeModal()}
-                            >
+                            <TouchableOpacity style={styles.buttonRed} onPress={() => closeModal()}>
                                 <Text style={styles.buttonText}>Cancelar</Text>
                             </TouchableOpacity>
                         </View>

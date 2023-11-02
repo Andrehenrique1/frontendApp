@@ -10,12 +10,22 @@ import {
 } from 'react-native';
 import {BASE_URL} from "../../Config";
 import MenuAutonomo from "../componentes/menuAutonomo";
+import chaveiro from "../img/profissoes/chaveiro.png";
+import cuidador from "../img/profissoes/cuidador.png";
+import encanador from "../img/profissoes/ecanadorIcon.png";
+import eletricista from "../img/profissoes/eletricistaIcon.png";
+import faxineiro from "../img/profissoes/faxineiraIcon.png";
+import jardineiro from "../img/profissoes/jardineiroIcon.png";
+import pedreiro from "../img/profissoes/pedreiroIcon.png";
+import pintor from "../img/profissoes/pintorIcon.png";
+import piscineiro from "../img/profissoes/piscineiroIcon.png";
 
 export default function PerfilAutonomo({route, navigation}) {
     const [profileData, setProfileData] = useState(null);
     const [countNotifications, setCountNotifications] = useState(null);
     const {customerId} = route.params;
     const {csrfToken} = route.params;
+    const {photo} = route.params;
 
     useEffect(() => {
         if (profileData) {
@@ -32,7 +42,9 @@ export default function PerfilAutonomo({route, navigation}) {
                     return response.json();
                 })
                 .then((data) => {
-                    setCountNotifications(data);
+                    if (data) {
+                        setCountNotifications(data);
+                    }
                 })
                 .catch((error) => {
                     console.error('Error fetching notification count:', error);
@@ -65,14 +77,41 @@ export default function PerfilAutonomo({route, navigation}) {
         navigation.navigate('Completar Cadastro', {customerId, profileData, csrfToken});
     };
 
+    const profissaoImages = {
+        chaveiro: chaveiro,
+        cuidador: cuidador,
+        encanador: encanador,
+        eletricista: eletricista,
+        faxineiro: faxineiro,
+        jardineiro: jardineiro,
+        pedreiro: pedreiro,
+        pintor: pintor,
+        piscineiro: piscineiro,
+    };
+
+    const professionImage = profileData ? profissaoImages[profileData.profissao] : null;
+
     return (
         <>
             <ScrollView style={styles.container}>
                 {profileData ? (
                     <View>
                         <View style={styles.topo}>
-                            <Image style={{flex: 1, width: '100%', marginTop: 10, height: 350, borderRadius: 20}}
-                                   source={require('../img/homem.jpg')}/>
+                            {/*<Image style={{flex: 1, width: '100%', marginTop: 10, height: 350, borderRadius: 20}}*/}
+                            {/*       source={{uri: photo}}/>*/}
+                            {professionImage && (
+                                <Image
+                                    style={{ flex: 1, width: '100%', marginTop: 10, height: 380 }}
+                                    // style={{ width: 100, height: 100 }} // Defina o tamanho desejado
+                                    source={professionImage}
+                                />
+                            )}
+                        </View>
+                        <View style={styles.buttons}>
+                            <TouchableOpacity style={styles.btnEdit} onPress={handleEdit}>
+                                <Image source={require('../img/icons/pencil-fill-circle.png')}/>
+                                <Text style={styles.btnText}>Editar Perfil</Text>
+                            </TouchableOpacity>
                         </View>
                         <View style={styles.all}>
                             <Text style={styles.title}>{profileData.nome_completo}, {profileData.idade}</Text>
@@ -120,22 +159,10 @@ export default function PerfilAutonomo({route, navigation}) {
                                 <Text style={styles.descricao}>{profileData.descricao}</Text>
                             </View>
                         </View>
-                        <View style={styles.buttons}>
-                            <TouchableOpacity style={styles.btnEdit} onPress={handleEdit}>
-                                <Image source={require('../img/icons/pencil-fill-circle.png')}/>
-                                <Text style={styles.btnText}>Editar Perfil</Text>
-                            </TouchableOpacity>
-                            {/*<TouchableOpacity style={styles.btnEdit} onPress={handleSubmit}>*/}
-                            {/*    <Image source={require('../img/icons/file-earmark-text-fill.png')}/>*/}
-
-                            {/*    <Text style={styles.btnText}>Ver Serviços ({countNotifications})</Text>*/}
-
-                            {/*</TouchableOpacity>*/}
-                        </View>
                     </View>
                 ) : null}
             </ScrollView>
-            <MenuAutonomo csrfToken={csrfToken} customerId={customerId} navigation={navigation} countNotifications={countNotifications}></MenuAutonomo>
+            <MenuAutonomo csrfToken={csrfToken} customerId={customerId} navigation={navigation} countNotifications={countNotifications}/>
         </>
     );
 }
@@ -154,6 +181,7 @@ const styles = StyleSheet.create({
         width: '100%',
         paddingLeft: 15,
         paddingRight: 15,
+        marginBottom: 70,
     },
     title: {
         fontSize: 25,
@@ -211,6 +239,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 15,
+        paddingBottom: 0,
     },
     btnEdit: {
         marginBottom: 15,

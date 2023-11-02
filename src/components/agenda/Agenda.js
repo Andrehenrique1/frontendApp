@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import {BASE_URL} from "../../Config";
 import axios from "axios";
+import MenuCliente from "../componentes/menuCliente";
 
 export default function Agenda({route, navigation}) {
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth()); // Change this to the desired month
@@ -54,9 +55,33 @@ export default function Agenda({route, navigation}) {
     };
 
     const toggleModal = (date) => {
-        setSelectedDate(date);
-        setIsModalVisible(!isModalVisible);
+        // Convert the selected date to a JavaScript Date object
+        const [day, month, year] = date.split('/').map(Number);
+        const selectedDate = new Date(year, month - 1, day); // Subtract 1 from the month to adjust to JavaScript's month numbering (0-11)
+
+        // Get the current date without time information
+        const currentDate = new Date();
+        currentDate.setHours(0, 0, 0, 0);
+
+        // Set the selected date to the same date without time information
+        selectedDate.setHours(0, 0, 0, 0);
+
+        // Check if the selected date is in the past
+        if (selectedDate < currentDate) {
+            // Show a warning message
+            ToastAndroid.show(
+                "Você não pode selecionar uma data passada.",
+                ToastAndroid.LONG,
+                ToastAndroid.CENTER
+            );
+        } else {
+            // If the date is not in the past, open the modal
+            setSelectedDate(date);
+            setIsModalVisible(true);
+        }
     };
+
+
 
     const goToPreviousMonth = () => {
         const newMonth = currentMonth - 1;
@@ -144,7 +169,7 @@ export default function Agenda({route, navigation}) {
                 if (!isNaN(formattedDate.getTime())) {
                     const userData = {
                         id_cliente: userId,
-                        id_autonomo: professionalData.id,
+                        id_autonomo: professionalData.id_usuario,
                         data: isoDate,
                         horario: selectedTime,
                         descricao: serviceDescription,
@@ -214,14 +239,14 @@ export default function Agenda({route, navigation}) {
                         <Text style={styles.dayOfWeek}>Sab</Text>
                     </View>
                     <View style={styles.calendarDay}>{renderCalendar()}</View>
-                    <View style={styles.legend}>
-                        <View style={[styles.legendColor, {backgroundColor: '#ff00009a'}]}/>
-                        <Text style={styles.legendText}>Ocupado</Text>
-                        <View style={[styles.legendColor, {backgroundColor: '#00ff009a'}]}/>
-                        <Text style={styles.legendText}>Selecionado</Text>
-                        <View style={[styles.legendColor, {backgroundColor: '#f1f1f1'}]}/>
-                        <Text style={styles.legendText}>Livre</Text>
-                    </View>
+                    {/*<View style={styles.legend}>*/}
+                    {/*    <View style={[styles.legendColor, {backgroundColor: '#ff00009a'}]}/>*/}
+                    {/*    <Text style={styles.legendText}>Ocupado</Text>*/}
+                    {/*    <View style={[styles.legendColor, {backgroundColor: '#00ff009a'}]}/>*/}
+                    {/*    <Text style={styles.legendText}>Selecionado</Text>*/}
+                    {/*    <View style={[styles.legendColor, {backgroundColor: '#f1f1f1'}]}/>*/}
+                    {/*    <Text style={styles.legendText}>Livre</Text>*/}
+                    {/*</View>*/}
                 </View>
             </ScrollView>
             <Modal visible={isModalVisible} animationType="slide" transparent>
@@ -272,6 +297,7 @@ export default function Agenda({route, navigation}) {
                     </View>
                 </View>
             </Modal>
+            <MenuCliente csrfToken={csrfToken} userId={userId} navigation={navigation}></MenuCliente>
         </>
     );
 }
