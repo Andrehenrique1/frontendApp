@@ -346,7 +346,7 @@ export default function ListagemServicos({route, navigation}) {
                                 <View style={styles.modalGroup}>
                                     <Text style={styles.modalSubTitle}>
                                         <Text
-                                            style={styles.subTitleBold}>Cliente:</Text> {selectedService.nome_completo}
+                                            style={styles.subTitleBold}>Prestador :</Text> {selectedService.nome_completo}
                                     </Text>
                                     <Text style={styles.modalSubTitle}>
                                         <Text style={styles.subTitleBold}>Dia:</Text> {formatDate(selectedService.data)}
