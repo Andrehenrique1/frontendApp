@@ -6,7 +6,7 @@ import {
     View,
     Image,
     TextInput,
-    TouchableOpacity,
+    TouchableOpacity, ActivityIndicator,
 } from 'react-native';
 import {BASE_URL} from "../../Config";
 
@@ -14,6 +14,7 @@ export default function EntrarCliente({navigation}) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const isEmailValid = (email) => {
         const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
@@ -38,9 +39,9 @@ export default function EntrarCliente({navigation}) {
             throw error;
         }
     };
-
     const handleSubmit = async () => {
         try {
+            setLoading(true);
             if (!email && !password) {
                 setError('Email e senha são requeridos.');
                 return;
@@ -81,6 +82,8 @@ export default function EntrarCliente({navigation}) {
         } catch (error) {
             console.error('Ocorreu um erro durante o login:', error);
             setError('Ocorreu um erro durante o login.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -125,6 +128,7 @@ export default function EntrarCliente({navigation}) {
                 <TouchableOpacity style={styles.button} onPress={handleSubmit}>
                     <Text style={styles.buttonText}>Entrar</Text>
                 </TouchableOpacity>
+                {loading && <ActivityIndicator size="large" color="#1333cd" />}
                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
             </View>
             <TouchableOpacity style={styles.toggleButton} onPress={goToRegister}>

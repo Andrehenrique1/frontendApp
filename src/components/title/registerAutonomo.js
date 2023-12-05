@@ -6,7 +6,7 @@ import {
     View,
     Image,
     TextInput,
-    TouchableOpacity,
+    TouchableOpacity, ActivityIndicator
 } from 'react-native';
 import {BASE_URL} from "../../Config";
 
@@ -14,6 +14,7 @@ export default function EntrarAutonomo({navigation}) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const isEmailValid = (email) => {
         // Regular expression for basic email validation
@@ -41,6 +42,7 @@ export default function EntrarAutonomo({navigation}) {
 
     const handleSubmit = async () => {
         try {
+            setLoading(true);
             if (!email || !password) {
                 setError('Email e senha são requeridos.');
                 return;
@@ -82,6 +84,8 @@ export default function EntrarAutonomo({navigation}) {
         } catch (error) {
             console.error('Ocorreu um erro durante o login:', error);
             setError('Ocorreu um erro durante o login.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -125,6 +129,7 @@ export default function EntrarAutonomo({navigation}) {
                 <TouchableOpacity style={styles.button} onPress={handleSubmit}>
                     <Text style={styles.buttonText}>Entrar</Text>
                 </TouchableOpacity>
+                {loading && <ActivityIndicator size="large" color="#1333cd" />}
                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
             </View>
             <TouchableOpacity style={styles.toggleButton} onPress={goToRegister}>

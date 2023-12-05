@@ -6,7 +6,7 @@ import {
     View,
     Image,
     TextInput,
-    TouchableOpacity, ScrollView
+    TouchableOpacity, ScrollView, ActivityIndicator
 } from 'react-native';
 import filter from '../img/icons/filter.png';
 import chaveiro from '../img/profissoes/chaveiro.png';
@@ -31,6 +31,7 @@ export default function Listagem({route, navigation}) {
     const [name, setName] = useState('');
     const [orderBy, setOrderBy] = useState('');
     const [filteredData, setFilteredData] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     const {userId} = route.params;
     const {csrfToken} = route.params;
@@ -68,6 +69,7 @@ export default function Listagem({route, navigation}) {
     };
 
     const handleFilter = () => {
+        setLoading(true);
         const apiUrl = `${BASE_URL}/get-autonomo?profession=${profession}&name=${name}&orderBy=${orderBy}`;
 
         fetch(apiUrl)
@@ -78,6 +80,9 @@ export default function Listagem({route, navigation}) {
             })
             .catch((error) => {
                 console.error('Error fetching data:', error);
+            })
+            .finally(() => {
+                setLoading(false); // Set loading to false regardless of success or failure
             });
     };
 
@@ -188,38 +193,60 @@ export default function Listagem({route, navigation}) {
                             </View>
                         )}
                         <View style={styles.list}>
-                            {filteredData.map((item, index) => (
-                                <TouchableOpacity style={[
-                                    styles.box,
-                                    index === filteredData.length - 1 ? { marginBottom: 70 } : null
-                                ]} key={item.id}
-                                                  onPress={() => handleProfileClick(item)}>
-                                    <Image source={profissaoImages[item.profissao]} style={styles.icon}/>
-                                    <View style={styles.content}>
-                                        <Text style={styles.name}>{item.nome_completo}</Text>
-                                        <Text>
-                                            Profissão: <Text style={styles.span}>{item.profissao}</Text>
-                                        </Text>
-                                        <View style={styles.avaliation}>
-                                            {item.media_avaliacao > 0 ? (
-                                                Array.from({length: item.media_avaliacao}).map((_, index) => (
-                                                    <Image
-                                                        source={require('../img/icons/star.png')}
-                                                        style={styles.avaliationIcon}
-                                                    />
-                                                ))
-                                            ) : (
-                                                <Text style={styles.noAvaliation}>Não possui avaliações</Text>
-                                            )}
-                                            {item.media_avaliacao > 0 && (
-                                                <Text style={styles.numberAvaliation}>
-                                                    (Média: {(Math.round(item.media_avaliacao * 10) / 10).toFixed(1)})
+                            {loading ? (
+                                <ActivityIndicator size="large" color="#1333cd" />
+                            ) : (
+                                <>
+                                    {filteredData.map((item, index) => (
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.box,
+                                                index === filteredData.length - 1 ? { marginBottom: 70 } : null,
+                                            ]}
+                                            key={item.id}
+                                            onPress={() => handleProfileClick(item)}
+                                        >
+                                            <Image
+                                                source={profissaoImages[item.profissao]}
+                                                style={styles.icon}
+                                            />
+                                            <View style={styles.content}>
+                                                <Text style={styles.name}>{item.nome_completo}</Text>
+                                                <Text>
+                                                    Profissão:{" "}
+                                                    <Text style={styles.span}>{item.profissao}</Text>
                                                 </Text>
-                                            )}
-                                        </View>
-                                    </View>
-                                </TouchableOpacity>
-                            ))}
+                                                <View style={styles.avaliation}>
+                                                    {item.media_avaliacao > 0 ? (
+                                                        Array.from({ length: item.media_avaliacao }).map(
+                                                            (_, index) => (
+                                                                <Image
+                                                                    source={require('../img/icons/star.png')}
+                                                                    style={styles.avaliationIcon}
+                                                                    key={index}
+                                                                />
+                                                            )
+                                                        )
+                                                    ) : (
+                                                        <Text style={styles.noAvaliation}>
+                                                            Não possui avaliações
+                                                        </Text>
+                                                    )}
+                                                    {item.media_avaliacao > 0 && (
+                                                        <Text style={styles.numberAvaliation}>
+                                                            (Média:{" "}
+                                                            {(
+                                                                Math.round(item.media_avaliacao * 10) / 10
+                                                            ).toFixed(1)}
+                                                            )
+                                                        </Text>
+                                                    )}
+                                                </View>
+                                            </View>
+                                        </TouchableOpacity>
+                                    ))}
+                                </>
+                            )}
                         </View>
                     </View>
                 </View>
